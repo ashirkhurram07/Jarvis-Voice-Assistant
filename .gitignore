@@ -1,0 +1,14 @@
+# Virtual environment
+.venv/
+
+# API keys
+.env
+.env.*
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+
+# Editor files
+.vscode/
+.idea/
