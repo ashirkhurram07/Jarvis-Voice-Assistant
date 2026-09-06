@@ -17,9 +17,9 @@ import speech_recognition as sr
 
 # Optional AI fallback (only used if OPENAI_API_KEY is set)
 try:
-    import openai
+    from openai import OpenAI
 except ImportError:
-    openai = None
+    OpenAI = None
 
 
 # ---------------------------------------------------------------------
@@ -40,26 +40,6 @@ def speak(text):
 # C. VOICE RECOGNITION
 # ---------------------------------------------------------------------
 recognizer = sr.Recognizer()
-
-
-# def take_command():
-#     """Listen through the microphone and convert speech to text."""
-#     with sr.Microphone() as source:
-#         recognizer.adjust_for_ambient_noise(source, duration=0.5)
-#         recognizer.pause_threshold = 1
-#         audio = recognizer.listen(source)
-
-#     try:
-#         query = recognizer.recognize_google(audio, language="en-in")
-#         print(f"You: {query}")
-#         return query.lower()
-#     except sr.UnknownValueError:
-#         return ""
-#     except sr.RequestError:
-#         speak("Speech service is unavailable right now.")
-#         return ""
-
-# 
 
 def take_command():
     try:
@@ -100,23 +80,26 @@ def take_command():
 # ---------------------------------------------------------------------
 # F. AI FALLBACK
 # ---------------------------------------------------------------------
+
 def ask_ai(prompt):
-    """Send unmatched queries to OpenAI when an API key is configured."""
     api_key = os.environ.get("OPENAI_API_KEY")
 
-    if not api_key or openai is None:
-        return "AI mode is not configured. Set OPENAI_API_KEY to enable it."
+    if not api_key or OpenAI is None:
+        return "AI mode is not configured."
 
     try:
-        openai.api_key = api_key
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return response["choices"][0]["message"]["content"].strip()
-    except Exception:
-        return "Sorry, I could not reach the AI service right now."
+        client = OpenAI(api_key=api_key)
 
+        response = client.responses.create(
+            model="gpt-5-mini",
+            input=prompt
+        )
+
+        return response.output_text.strip()
+
+    except Exception as error:
+        print(f"OpenAI error: {type(error).__name__}: {error}")
+        return "Sorry, I could not reach the AI service right now."
 
 # ---------------------------------------------------------------------
 # E. COMMAND HANDLER
@@ -177,25 +160,6 @@ def handle_command(query):
         answer = ask_ai(query)
         speak(answer)
 
-
-# ---------------------------------------------------------------------
-# D. WAKE WORD + MAIN LOOP
-# ---------------------------------------------------------------------
-# def main():
-#     speak("Initializing Jarvis.")
-#     speak("Say Jarvis to wake me up.")
-
-#     while True:
-#         query = take_command()
-
-#         if "jarvis" in query:
-#             speak("Ya. I am listening.")
-#             command = take_command()
-#             if command:
-#                 try:
-#                     handle_command(command)
-#                 except SystemExit:
-#                     break
 def main():
     speak("Initializing Jarvis.")
 
